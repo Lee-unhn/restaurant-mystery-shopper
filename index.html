@@ -75,6 +75,13 @@ display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0)
 .veto-banner{display:none;background:var(--red);color:#fff;padding:10px 14px;border-radius:10px;
 font-weight:700;margin-bottom:12px;}
 .veto-banner.on{display:block;}
+.taskcard{background:#fff7e6;border:1px solid #e8d28a;border-left:5px solid var(--gold2);
+border-radius:12px;padding:12px 14px;margin-bottom:14px;}
+.taskcard .tch{font-weight:800;color:var(--gold);margin-bottom:6px;font-size:15px;}
+.taskcard ol{margin:0;padding-left:20px;} .taskcard li{margin:4px 0;font-size:14px;line-height:1.5;}
+body.ext header{background:#5a4a1f;}
+.redline .opts .opt.see.sel{background:var(--red);border-color:var(--red);color:#fff;}
+.redline .opts .opt.ok.sel{background:var(--green);border-color:var(--green);color:#fff;}
 dialog{border:none;border-radius:14px;padding:0;max-width:92vw;width:560px;}
 dialog .dh{background:var(--navy);color:#fff;padding:12px 14px;font-weight:700;}
 dialog pre{margin:0;padding:14px;white-space:pre-wrap;font-size:13px;max-height:60vh;overflow:auto;
@@ -127,7 +134,16 @@ dialog .df button{flex:1;padding:11px;border:none;border-radius:9px;font-weight:
     <button id="mFull" class="on" onclick="setMode('full')">完整評分（1–5）</button>
     <button id="mQuick" onclick="setMode('quick')">快速（好／普通／差）</button>
   </div>
-  <div class="tip" id="extTip" style="display:none;margin:0 0 10px">外部簡易版：已隱藏需專業判斷或看不到的題目，只留外行人一看就能勾的項目。</div>
+  <div class="taskcard" id="taskCard" style="display:none">
+    <div class="tch">這次去要做的 5 件事</div>
+    <ol>
+      <li>進門先在心裡<b>算秒數</b>——記幾秒內有人招呼你。</li>
+      <li>每道菜上桌<b>先拍一張</b>（像在打卡），至少 4 道。</li>
+      <li>點餐時問一句<b>「這道有沒有蝦／蛋？」</b>聽店員答不答得出。</li>
+      <li>結帳留發票，記店員有沒有提<b>加入會員</b>、有沒有<b>推薦酒／套餐</b>。</li>
+      <li>離店後 1 小時內，照下面選項把表填完、按<b>送出</b>。</li>
+    </ol>
+  </div>
 
   <div id="sections"></div>
 
@@ -170,6 +186,16 @@ const DATA={"A":[{"id":"A1","text":"內場／作業區人員全程戴帽（含�
 const ENDPOINT="";
 // 外部簡易版要隱藏的「需專業或看不到」題目（對應附錄 P）
 const HIDE_EXT=new Set(["A3","A13","A15","A16","C8","C9","C10","C11","C12","D5","F6"]);
+// 外部版：食安只勾 5 條「看得到的紅線」（看到＝違規）
+const EXT_REDLINE=[
+  ["X1","掉到地上的餐具被撿起來繼續用"],
+  ["X2","杯子有口紅印、水垢或明顯髒污"],
+  ["X3","看到蟑螂、蒼蠅、老鼠或鼠跡"],
+  ["X4","廚師沒戴帽子／口罩拉到下巴露口鼻"],
+  ["X5","廁所沒有肥皂或擦手紙"],
+];
+// 外部版：構面改白話名稱、不顯示代碼與權重
+const EXT_SEC={A:"食安紅線（看到就勾）",B:"歡迎與帶位",C:"餐點",D:"環境",E:"VIP（如適用）",F:"服務態度",G:"結帳前後"};
 const CON=[
   {k:"A",nm:"食安與衛生紅線",wt:"一票否決",cls:"a"},
   {k:"B",nm:"接待與服務動線",wt:"25%"},
@@ -188,14 +214,30 @@ function el(t,c,h){const e=document.createElement(t);if(c)e.className=c;if(h!=nu
 function build(){
   const root=document.getElementById("sections"); root.innerHTML="";
   CON.forEach((c,idx)=>{
-    const sec=el("div","sec"+(idx===0?" open":""));
+    const sec=el("div","sec"+(idx===0?" open":"")+(EXT&&c.k==="A"?" redline":""));
     const hd=el("div","sechd");
-    hd.innerHTML='<div class="lt"><div class="badge '+(c.cls||"")+'">'+c.k+'</div><div><div class="nm">'+c.nm+'</div><div class="wt">'+c.wt+'</div></div></div><div style="display:flex;gap:10px;align-items:center"><span class="secavg" id="avg_'+c.k+'">—</span><span class="chev">▼</span></div>';
+    const nm=EXT?EXT_SEC[c.k]:c.nm;
+    const badge=EXT?'<div class="badge '+(c.cls||"")+'">'+(c.k==="A"?"！":(idx))+'</div>':'<div class="badge '+(c.cls||"")+'">'+c.k+'</div>';
+    const wt=EXT?'':'<div class="wt">'+c.wt+'</div>';
+    hd.innerHTML='<div class="lt">'+badge+'<div><div class="nm">'+nm+'</div>'+wt+'</div></div><div style="display:flex;gap:10px;align-items:center"><span class="secavg" id="avg_'+c.k+'">—</span><span class="chev">▼</span></div>';
     hd.onclick=()=>sec.classList.toggle("open");
     const body=el("div","body");
-    if(c.k==="A"){
+    if(c.k==="A" && EXT){
+      EXT_REDLINE.forEach(rl=>{
+        const d=el("div","item");
+        d.innerHTML='<div class="q">'+rl[1]+'</div>'+
+          '<div class="opts" data-id="'+rl[0]+'">'+
+          '<div class="opt ok" data-v="pass">沒看到</div>'+
+          '<div class="opt see" data-v="viol">看到了</div></div>';
+        d.querySelectorAll(".opt").forEach(o=>o.onclick=()=>{
+          A_ans[rl[0]]=o.dataset.v;
+          d.querySelectorAll(".opt").forEach(x=>x.classList.remove("sel"));
+          o.classList.add("sel"); recompute();
+        });
+        body.appendChild(d);
+      });
+    } else if(c.k==="A"){
       DATA.A.forEach(it=>{
-        if(EXT && HIDE_EXT.has(it.id)) return;
         const d=el("div","item");
         d.innerHTML='<div class="q"><b>'+it.id+'</b>　'+it.text+'</div>'+
           '<div class="hint">合格基準：'+it.crit+'</div>'+
@@ -217,10 +259,10 @@ function build(){
         .forEach(id=>{
         const it=DATA.items[id];
         const d=el("div","item");
-        d.innerHTML='<div class="q"><b>'+id+'</b>　'+it.text+' <span class="tap">說明</span></div>'+
-          '<div class="hint"><span class="h5">5｜'+(it.a5||"")+'</span>　<span class="h3">3｜'+(it.a3||"")+'</span>　<span class="h1">1｜'+(it.a1||"")+'</span></div>'+
-          '<div class="opts" data-id="'+id+'"></div>';
-        d.querySelector(".tap").onclick=()=>d.classList.toggle("exp");
+        const q=EXT?it.text:('<b>'+id+'</b>　'+it.text+' <span class="tap">說明</span>');
+        const hint=EXT?'':'<div class="hint"><span class="h5">5｜'+(it.a5||"")+'</span>　<span class="h3">3｜'+(it.a3||"")+'</span>　<span class="h1">1｜'+(it.a1||"")+'</span></div>';
+        d.innerHTML='<div class="q">'+q+'</div>'+hint+'<div class="opts" data-id="'+id+'"></div>';
+        if(!EXT) d.querySelector(".tap").onclick=()=>d.classList.toggle("exp");
         renderOpts(d.querySelector(".opts"),id);
         body.appendChild(d);
       });
@@ -261,8 +303,11 @@ function setAud(ext){ EXT=ext;
   document.getElementById("aIn").classList.toggle("on",!ext);
   document.getElementById("aExt").classList.toggle("on",ext);
   document.getElementById("modeBar").style.display=ext?"none":"flex";
-  document.getElementById("extTip").style.display=ext?"block":"none";
-  if(ext){ HIDE_EXT.forEach(id=>{ delete A_ans[id]; delete S_ans[id]; }); mode="quick"; }
+  document.getElementById("taskCard").style.display=ext?"block":"none";
+  document.body.classList.toggle("ext",ext);
+  document.querySelector("header .hsub").textContent=ext?"顧客體驗回饋 · 行動版":"精緻和食 · 行動版";
+  Object.keys(A_ans).forEach(k=>delete A_ans[k]);  // 食安題在兩版不同，切換即清
+  if(ext){ HIDE_EXT.forEach(id=>delete S_ans[id]); mode="quick"; }
   build();
 }
 function conAvg(k){ const ids=Object.keys(DATA.items).filter(i=>i[0]===k);
@@ -304,15 +349,15 @@ function summary(){
   L.push("服務員："+g("m_server"));
   L.push("計時：迎賓"+g("t_greet")+"秒｜茶水"+g("t_tea")+"分｜首道"+g("t_food")+"分｜結帳"+g("t_pay")+"分");
   L.push("");
-  const viol=DATA.A.filter(it=>A_ans[it.id]==="viol");
-  L.push("【A 食安】"+(viol.length?("⚠️一票否決：違規 "+viol.map(v=>v.id).join("、")):"全通過／無違規"));
+  const violIds=Object.keys(A_ans).filter(id=>A_ans[id]==="viol");
+  L.push("【食安】"+(violIds.length?("⚠️一票否決：違規 "+violIds.join("、")):"全通過／無違規"));
   ["B","C","D","E","F","G"].forEach(k=>{ if(k==="E"&&!incE){L.push("E VIP差異化：N/A（非VIP場）");return;}
     const a=conAvg(k);const det=Object.keys(DATA.items).filter(i=>i[0]===k)
       .map(i=>i+":"+(S_ans[i]==="na"?"N/A":(S_ans[i]??"-"))).join(" ");
     L.push(k+" "+CON.find(c=>c.k===k).nm+"："+(a==null?"—":a.toFixed(2))+"\n  "+det); });
   let used={...WT}; if(!incE)delete used.E; let sum=0,ws=0;
   Object.keys(used).forEach(k=>{const a=conAvg(k);if(a!=null){sum+=a*used[k];ws+=used[k];}});
-  const veto=viol.length>0; const score=ws?sum/ws:null;
+  const veto=violIds.length>0; const score=ws?sum/ws:null;
   L.push("");
   L.push("加權總分："+(veto?"一票否決（不合格）":(score==null?"—":score.toFixed(2)+"　等級："+(score>=4.5?"標竿":score>=4?"達標":score>=3.5?"待改善":"不合格"))));
   const evi=[...document.querySelectorAll(".ev:checked")].map(e=>e.value).join("、");
