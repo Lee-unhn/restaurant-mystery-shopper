@@ -127,7 +127,7 @@ box-shadow:0 1px 3px rgba(0,0,0,.15);user-select:none;}
 </head>
 <body>
 <div id="gate">
-  <div class="gt">秘密客評鑑系統</div>
+  <div class="gt">餐飲評估問卷</div>
   <div class="gs">請選擇你的身分，進入對應的評鑑表</div>
   <div class="gcard lock" onclick="enter('staff_pro')"><div class="gn">員工稽核 · 專業評鑑</div><div class="gd">店長／幹部跨店評鑑（需通行碼）</div></div>
   <div class="gcard lock" onclick="enter('staff_std')"><div class="gn">員工稽核 · 一般評鑑</div><div class="gd">一般員工跨店走查（需通行碼）</div></div>
@@ -136,7 +136,7 @@ box-shadow:0 1px 3px rgba(0,0,0,.15);user-select:none;}
 </div>
 <header>
   <div class="htop">
-    <div><div class="htitle">秘密客評鑑表</div><div class="hsub">餐飲評估 · 行動版</div></div>
+    <div><div class="htitle">餐飲評估問卷</div><div class="hsub">行動版</div></div>
     <div class="score" id="scoreBox"><div class="num" id="scNum">—</div><div class="grade" id="scGrade">尚未評分</div></div>
   </div>
 </header>
@@ -484,7 +484,7 @@ function summary(){
   const g=id=>document.getElementById(id).value;
   const incE=vipOn();
   let L=[];
-  L.push("餐飲評估 · 秘密客評鑑摘要");
+  L.push("餐飲評估問卷 · 摘要");
   L.push("版本："+VER.label+"　來源："+VER.src);
   L.push("店別："+g("m_store")+"　日期："+g("m_date"));
   L.push("時段："+g("m_time")+"／"+g("m_party")+"　場次："+g("m_sess"));
