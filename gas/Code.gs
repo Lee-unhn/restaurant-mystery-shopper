@@ -1,6 +1,6 @@
 // 秘密客 · Google Sheet 收集器 v2（附件上傳版）
 // 沿用原部署網址：部署 → 管理部署作業 → 編輯 → 新版本
-const SHEET_ID = '1kp2FEofT1qfuhDT4lkI94GV64aauxLlFdGY7SK1g2YQ';
+const SHEET_ID = '貼你的SheetID';  // 部署時填入，勿 commit 真實 ID
 const MAIN = 'submissions_v2';   // 新分頁起頭，舊 submissions 不動
 const RAW = 'raw';
 const ROOT_FOLDER_NAME = '秘密客證據';   // Drive 根資料夾，不存在自動建立
