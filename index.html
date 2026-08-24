@@ -111,6 +111,7 @@ border-radius:9px;font-weight:700;font-size:13px;}
 .thelp{font-size:12px;color:var(--mute);margin:2px 0 10px;line-height:1.7;background:#fff;
 border:1px dashed var(--line);border-radius:9px;padding:8px 10px;}
 .thelp b{color:var(--navy);}
+.u{font-weight:800;} .u.s{color:var(--red);} .u.m{color:var(--green);}
 </style>
 </head>
 <body>
@@ -144,8 +145,8 @@ border:1px dashed var(--line);border-radius:9px;padding:8px 10px;}
     <label class="fld"><span>場次類型</span><select id="m_sess" onchange="onSess()"><option>標準場</option><option>VIP場</option><option>客訴模擬</option><option>外帶／訂位場</option></select></label>
     <h2 style="margin-top:6px">計時</h2>
     <div class="thelp">
-      <b>進門→迎賓</b>：踏進大門 → 第一位員工開口招呼你，數<b>秒</b>。<br>
-      <b>入座→茶水</b>：坐下 → 茶水（迎賓茶／毛巾）送上桌，以下皆數<b>分鐘</b>。<br>
+      <b>進門→迎賓</b>：踏進大門 → 第一位員工開口招呼你，數<span class="u s">秒</span>。<br>
+      <b>入座→茶水</b>：坐下 → 茶水（迎賓茶／毛巾）送上桌，以下皆數<span class="u m">分鐘</span>。<br>
       <b>茶水→點餐</b>：茶水送上桌 → 店員收單、點餐完成（按上方鈕自動算）。<br>
       <b>點餐→首道</b>：點餐完成 → 第一道菜上桌（按「上菜 +1」自動算）。<br>
       <b>首道→最後道</b>：第一道上桌 → 最後一道上桌（按「上菜 +1」自動算）。<br>
@@ -158,16 +159,16 @@ border:1px dashed var(--line);border-radius:9px;padding:8px 10px;}
     </div>
     <div id="dishList"></div>
     <div class="row">
-      <label class="fld"><span>進門→迎賓（秒）</span><input id="t_greet" type="number" inputmode="numeric"></label>
-      <label class="fld"><span>入座→茶水（分）</span><input id="t_tea" type="number" inputmode="decimal"></label>
+      <label class="fld"><span>進門→迎賓<span class="u s">（秒）</span></span><input id="t_greet" type="number" inputmode="numeric"></label>
+      <label class="fld"><span>入座→茶水<span class="u m">（分）</span></span><input id="t_tea" type="number" inputmode="decimal"></label>
     </div>
     <div class="row">
-      <label class="fld"><span>茶水→點餐（分）</span><input id="t_order" type="number" inputmode="decimal" placeholder="按上方鈕自動帶入"></label>
-      <label class="fld"><span>點餐→首道（分）</span><input id="t_food" type="number" inputmode="decimal" placeholder="自動帶入第一道"></label>
+      <label class="fld"><span>茶水→點餐<span class="u m">（分）</span></span><input id="t_order" type="number" inputmode="decimal" placeholder="按上方鈕自動帶入"></label>
+      <label class="fld"><span>點餐→首道<span class="u m">（分）</span></span><input id="t_food" type="number" inputmode="decimal" placeholder="自動帶入第一道"></label>
     </div>
     <div class="row">
-      <label class="fld"><span>首道→最後道（分）</span><input id="t_serve" type="number" inputmode="decimal" placeholder="滿兩道自動帶入"></label>
-      <label class="fld"><span>結帳（分）</span><input id="t_pay" type="number" inputmode="decimal"></label>
+      <label class="fld"><span>首道→最後道<span class="u m">（分）</span></span><input id="t_serve" type="number" inputmode="decimal" placeholder="滿兩道自動帶入"></label>
+      <label class="fld"><span>結帳<span class="u m">（分）</span></span><input id="t_pay" type="number" inputmode="decimal"></label>
     </div>
   </div>
 
