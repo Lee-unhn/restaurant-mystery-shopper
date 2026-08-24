@@ -112,6 +112,15 @@ border-radius:9px;font-weight:700;font-size:13px;}
 border:1px dashed var(--line);border-radius:9px;padding:8px 10px;}
 .thelp b{color:var(--navy);}
 .u{font-weight:800;} .u.s{color:var(--red);} .u.m{color:var(--green);}
+/* 證據上傳 */
+.upgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 8px;}
+.upbox{border:1.5px dashed var(--line);border-radius:10px;padding:10px 6px;text-align:center;
+background:#fff;cursor:pointer;font-size:13px;}
+.upbox .cnt{font-weight:800;color:var(--navy);font-size:17px;}
+.upbox.has{border-color:var(--green);border-style:solid;}
+.upbox.has .cnt{color:var(--green);}
+.upbox .clr{color:var(--red);font-size:11px;text-decoration:underline;display:none;}
+.upbox.has .clr{display:inline-block;}
 </style>
 </head>
 <body>
@@ -188,13 +197,8 @@ border:1px dashed var(--line);border-radius:9px;padding:8px 10px;}
   <div class="sec open">
     <div class="sechd"><div class="lt"><div class="badge" style="background:var(--gold)">✎</div><div class="nm">證據與摘要</div></div></div>
     <div class="body">
-      <div class="evi" style="margin:6px 0 12px">
-        <label><input type="checkbox" class="ev" value="發票">發票</label>
-        <label><input type="checkbox" class="ev" value="出餐照×3">出餐照×3</label>
-        <label><input type="checkbox" class="ev" value="計時">計時</label>
-        <label><input type="checkbox" class="ev" value="環境照">環境照</label>
-        <label><input type="checkbox" class="ev" value="錄音(客訴場)">錄音(客訴場)</label>
-      </div>
+      <div class="upgrid" id="evUp"></div>
+      <div class="hint" style="display:block;margin:0 0 10px">點方塊選檔或拍照。照片會自動壓縮，隨「送出」一併上傳；錄音單檔限 15MB。</div>
       <label class="fld"><span>本日服務員（特徵代稱）</span><input id="m_server" placeholder="例：短髮男店員、約25歲"></label>
       <label class="fld"><span>客觀事實摘要（寫行為、時序，不寫情緒）</span>
         <textarea id="m_note" placeholder="例：19:14 招手兩次後店員前來；炙燒物上桌已不燙；結帳未主動提入會。"></textarea></label>
@@ -382,6 +386,15 @@ function setScore(id,v,box){ S_ans[id]=(S_ans[id]===v?undefined:v);
 function onSess(){ if(VER) build(); }
 function conAvg(k){ const vals=visibleIds(k).map(i=>S_ans[i]).filter(v=>typeof v==="number");
   if(!vals.length)return null; return vals.reduce((a,b)=>a+b,0)/vals.length; }
+function calcScore(){ // 單一事實來源：veto／加權總分／等級
+  const veto=Object.values(A_ans).some(v=>v==="viol");
+  let used={...WT}; if(!vipOn()) delete used.E;
+  let sum=0,ws=0;
+  Object.keys(used).forEach(k=>{const a=conAvg(k); if(a!=null){sum+=a*used[k];ws+=used[k];}});
+  const score=ws?sum/ws:null;
+  const grade=score==null?null:(score>=4.5?"標竿":score>=4?"達標":score>=3.5?"待改善":"不合格");
+  return {veto,score,grade};
+}
 function recompute(){
   // veto
   const veto=Object.values(A_ans).some(v=>v==="viol");
@@ -393,19 +406,56 @@ function recompute(){
   if(aEl){const vs=Object.values(A_ans);const viol=vs.filter(v=>v==="viol").length;
     aEl.textContent=viol?("違規"+viol):(vs.length?"通過":"—");aEl.style.color=viol?"var(--red)":"var(--green)";}
   // weighted total
-  const incE=vipOn();
-  let used={...WT}; if(!incE) delete used.E;
-  let sum=0,wsum=0;
-  Object.keys(used).forEach(k=>{const a=conAvg(k); if(a!=null){sum+=a*used[k];wsum+=used[k];}});
+  const cs=calcScore();
   const box=document.getElementById("scoreBox");
   const numEl=document.getElementById("scNum"),grEl=document.getElementById("scGrade");
   box.classList.remove("veto");
-  if(veto){box.classList.add("veto");numEl.textContent="";grEl.textContent="食安違規";return;}
-  if(!wsum){numEl.textContent="—";grEl.textContent="尚未評分";return;}
-  const score=sum/wsum; // normalize by answered weights
-  numEl.textContent=score.toFixed(2);
-  grEl.textContent=score>=4.5?"標竿":score>=4?"達標":score>=3.5?"待改善":"不合格";
+  if(cs.veto){box.classList.add("veto");numEl.textContent="";grEl.textContent="食安違規";return;}
+  if(cs.score==null){numEl.textContent="—";grEl.textContent="尚未評分";return;}
+  numEl.textContent=cs.score.toFixed(2);
+  grEl.textContent=cs.grade;
 }
+
+// ── 證據檔案（上傳至 Drive、Sheet 記連結；由 GAS 後端落地）──
+const EV_TYPES=[["發票","image/*"],["出餐照","image/*"],["環境照","image/*"],["錄音","audio/*"]];
+const EV_FILES={發票:[],出餐照:[],環境照:[],錄音:[]};
+function toB64(file){return new Promise((res,rej)=>{const r=new FileReader();
+  r.onload=()=>res({name:file.name,mime:file.type||"application/octet-stream",data:r.result.split(",")[1]});
+  r.onerror=rej;r.readAsDataURL(file);});}
+function compressImg(file){return new Promise((res)=>{const img=new Image();const url=URL.createObjectURL(file);
+  img.onload=()=>{const MAX=1600;let w=img.width,h=img.height;
+    const sc=Math.min(1,MAX/Math.max(w,h));w=Math.round(w*sc);h=Math.round(h*sc);
+    const c=document.createElement("canvas");c.width=w;c.height=h;
+    c.getContext("2d").drawImage(img,0,0,w,h);URL.revokeObjectURL(url);
+    res({name:file.name.replace(/\.[^.]+$/,"")+".jpg",mime:"image/jpeg",data:c.toDataURL("image/jpeg",0.8).split(",")[1]});};
+  img.onerror=()=>{URL.revokeObjectURL(url);toB64(file).then(res);};
+  img.src=url;});}
+function buildEvUI(){
+  const grid=document.getElementById("evUp");grid.innerHTML="";
+  EV_TYPES.forEach(([kind,accept])=>{
+    const box=el("div","upbox");box.dataset.kind=kind;
+    const inp=document.createElement("input");inp.type="file";inp.accept=accept;inp.multiple=true;inp.style.display="none";
+    inp.onchange=async()=>{
+      for(const f of inp.files){
+        if(f.type.startsWith("image/")){EV_FILES[kind].push(await compressImg(f));}
+        else if(f.size>15*1024*1024){alert(f.name+" 超過 15MB，未加入");}
+        else{EV_FILES[kind].push(await toB64(f));}
+      }
+      inp.value="";refreshEv();
+    };
+    box.appendChild(inp);
+    box.appendChild(el("div",null,'<div class="cnt" id="evc_'+kind+'">0</div><div>'+kind+(kind==="錄音"?"（客訴模擬）":"")+'</div><span class="clr">清空重選</span>'));
+    box.onclick=(e)=>{ if(e.target===inp)return;
+      if(e.target.classList.contains("clr")){EV_FILES[kind].length=0;refreshEv();return;}
+      inp.click(); };
+    grid.appendChild(box);
+  });
+}
+function refreshEv(){EV_TYPES.forEach(([kind])=>{const n=EV_FILES[kind].length;
+  document.getElementById("evc_"+kind).textContent=n;
+  document.querySelector('.upbox[data-kind="'+kind+'"]').classList.toggle("has",n>0);});}
+function evCounts(){const o={};EV_TYPES.forEach(([k])=>o[k]=EV_FILES[k].length);return o;}
+function evFlat(){const a=[];EV_TYPES.forEach(([k])=>EV_FILES[k].forEach(f=>a.push({kind:k,name:f.name,mime:f.mime,data:f.data})));return a;}
 
 // ── 上菜計時 ──
 const T={tea:null,order:null,dishes:[]};
@@ -446,13 +496,12 @@ function summary(){
     const a=conAvg(k);const det=visibleIds(k)
       .map(i=>i+":"+(S_ans[i]==="na"?"N/A":(S_ans[i]??"-"))).join(" ");
     L.push(k+" "+CON.find(c=>c.k===k).nm+"："+(a==null?"—":a.toFixed(2))+"\n  "+det); });
-  let used={...WT}; if(!incE)delete used.E; let sum=0,ws=0;
-  Object.keys(used).forEach(k=>{const a=conAvg(k);if(a!=null){sum+=a*used[k];ws+=used[k];}});
-  const veto=violIds.length>0; const score=ws?sum/ws:null;
+  const cs=calcScore();
   L.push("");
-  L.push("加權總分："+(veto?"一票否決（不合格）":(score==null?"—":score.toFixed(2)+"　等級："+(score>=4.5?"標竿":score>=4?"達標":score>=3.5?"待改善":"不合格"))));
-  const evi=[...document.querySelectorAll(".ev:checked")].map(e=>e.value).join("、");
-  L.push("證據："+(evi||"（未勾）"));
+  L.push("加權總分："+(cs.veto?"一票否決（不合格）":(cs.score==null?"—":cs.score.toFixed(2)+"　等級："+cs.grade)));
+  const ec=evCounts();
+  const evi=EV_TYPES.map(([k])=>ec[k]?k+"×"+ec[k]:null).filter(Boolean).join("、");
+  L.push("證據："+(evi||"（未附檔）"));
   L.push("客觀事實摘要：");
   L.push(g("m_note")||"（未填）");
   return L.join("\n");
@@ -460,15 +509,18 @@ function summary(){
 function showSummary(){document.getElementById("dlgPre").textContent=summary();document.getElementById("dlg").showModal();}
 function copySummary(){navigator.clipboard.writeText(summary()).then(()=>alert("已複製，可貼到 LINE／Email 交回。"));}
 function payload(){
+  const cs=calcScore();
   const out={version:VER.label,aud:VER.aud,pro:VER.pro,meta:{},A:A_ans,scores:S_ans,
     dishes:T.dishes.map((d,i)=>({n:i+1,name:d.name,sec:Math.round(d.t)})),
-    evidence:[...document.querySelectorAll(".ev:checked")].map(e=>e.value),summary:summary(),ts:new Date().toISOString()};
+    total:cs.score==null?null:+cs.score.toFixed(2),grade:cs.veto?"食安違規":cs.grade,veto:cs.veto,
+    evidence:evCounts(),files:evFlat(),summary:summary(),ts:new Date().toISOString()};
   ["m_store","m_date","m_time","m_party","m_sess","m_server","t_greet","t_tea","t_order","t_food","t_serve","t_pay","m_note"].forEach(id=>out.meta[id]=document.getElementById(id).value);
   out.meta.m_src=VER.src; // 秘客來源由入口決定，不自報
   return out;
 }
 function exportJSON(){
   const out=payload();
+  delete out.files; out.files_note="附件僅隨線上「送出」上傳，本下載檔只記件數";
   const blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);
   a.download="秘密客_"+(out.meta.m_store||"店")+"_"+(out.meta.m_date||"")+".json";a.click();
@@ -476,11 +528,14 @@ function exportJSON(){
 function submitForm(){
   if(!ENDPOINT){ alert("尚未設定回收網址。改為「下載檔＋複製摘要」，請手動交回。"); exportJSON(); copySummary(); return; }
   if(!document.getElementById("m_store").value){ alert("請先填店別。"); return; }
+  const evBytes=evFlat().reduce((a,f)=>a+f.data.length,0)*0.75;
+  if(evBytes>25*1024*1024){ alert("附件總量超過 25MB，請刪減照片或錄音後再送出。"); return; }
   fetch(ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload())})
     .then(()=>alert("已送出，主管端會自動收到。可關閉本頁。"))
     .catch(()=>{alert("送出失敗（可能離線）。已改為下載檔，請手動交回。");exportJSON();});
 }
 function clearAll(){ if(!confirm("確定清除全部？將回到身分選擇畫面。"))return; location.reload(); }
+buildEvUI();
 // 不在載入時 build()——由入口 enter() 觸發
 </script>
 </body>
