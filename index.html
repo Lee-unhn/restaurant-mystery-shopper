@@ -131,7 +131,7 @@ box-shadow:0 1px 3px rgba(0,0,0,.15);user-select:none;}
   <div class="gs">請選擇你的身分，進入對應的評鑑表</div>
   <div class="gcard lock" onclick="enter('staff_pro')"><div class="gn">員工稽核 · 專業評鑑</div><div class="gd">店長／幹部跨店評鑑（需通行碼）</div></div>
   <div class="gcard lock" onclick="enter('staff_std')"><div class="gn">員工稽核 · 一般評鑑</div><div class="gd">一般員工跨店走查（需通行碼）</div></div>
-  <div class="gcard lock" onclick="enter('guest_pro')"><div class="gn">專業秘密客</div><div class="gd">受聘專業評鑑人員（需通行碼）</div></div>
+  <div class="gcard lock" onclick="enter('guest_pro')"><div class="gn">專業評鑑人員</div><div class="gd">受聘外部專業人員（需通行碼）</div></div>
   <div class="gcard" onclick="enter('guest_std')"><div class="gn">顧客體驗回饋</div><div class="gd">一般顧客，約 5 分鐘完成</div></div>
 </div>
 <header>
@@ -235,7 +235,7 @@ const ENDPOINT="https://script.google.com/macros/s/AKfycbzjn_9zuvRIh4cNjNkFlTg5R
 const VERSIONS={
   staff_pro:{aud:"staff",pro:true ,code:"8888",label:"員工稽核 · 專業評鑑",src:"內部跨店"},
   staff_std:{aud:"staff",pro:false,code:"8888",label:"員工稽核 · 一般評鑑",src:"內部跨店"},
-  guest_pro:{aud:"guest",pro:true ,code:"5168",label:"專業秘密客",src:"外部專業"},
+  guest_pro:{aud:"guest",pro:true ,code:"5168",label:"專業評鑑人員",src:"外部專業"},
   guest_std:{aud:"guest",pro:false,code:"",label:"顧客體驗回饋",src:"顧客轉化"}};
 let VER=null;
 // 普通版（員工一般／顧客體驗）保留題
