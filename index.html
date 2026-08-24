@@ -114,10 +114,10 @@ border-radius:9px;font-weight:700;font-size:13px;}
 <div id="gate">
   <div class="gt">秘密客評鑑系統</div>
   <div class="gs">請選擇你的身分，進入對應的評鑑表</div>
-  <div class="gcard lock" onclick="enter('staff_pro')"><div class="gn">員工稽核 · 專業評鑑</div><div class="gd">店長／幹部跨店評鑑：完整題庫＋內場食安稽核＋1–5 分錨定（需通行碼）</div></div>
-  <div class="gcard lock" onclick="enter('staff_std')"><div class="gn">員工稽核 · 一般評鑑</div><div class="gd">一般員工跨店走查：精選題目＋內場食安稽核，好／普通／差快速評（需通行碼）</div></div>
-  <div class="gcard lock" onclick="enter('guest_pro')"><div class="gn">專業秘密客</div><div class="gd">受聘專業評鑑人員：完整題庫（客席視角）＋1–5 分錨定（需通行碼）</div></div>
-  <div class="gcard" onclick="enter('guest_std')"><div class="gn">顧客體驗回饋</div><div class="gd">一般顧客：精簡問卷，約 5 分鐘完成，免通行碼</div></div>
+  <div class="gcard lock" onclick="enter('staff_pro')"><div class="gn">員工稽核 · 專業評鑑</div><div class="gd">店長／幹部跨店評鑑（需通行碼）</div></div>
+  <div class="gcard lock" onclick="enter('staff_std')"><div class="gn">員工稽核 · 一般評鑑</div><div class="gd">一般員工跨店走查（需通行碼）</div></div>
+  <div class="gcard lock" onclick="enter('guest_pro')"><div class="gn">專業秘密客</div><div class="gd">受聘專業評鑑人員（需通行碼）</div></div>
+  <div class="gcard" onclick="enter('guest_std')"><div class="gn">顧客體驗回饋</div><div class="gd">一般顧客，約 5 分鐘完成</div></div>
 </div>
 <header>
   <div class="htop">
@@ -136,9 +136,9 @@ border-radius:9px;font-weight:700;font-size:13px;}
     </div>
     <div class="row">
       <label class="fld"><span>時段</span><select id="m_time"><option>中午</option><option>晚上</option></select></label>
-      <label class="fld"><span>人數組成</span><select id="m_party"><option>個人／雙人</option><option>團體</option></select></label>
+      <label class="fld"><span>人數組成</span><select id="m_party"><option>個人／雙人</option><option>3人以上</option></select></label>
     </div>
-    <label class="fld"><span>場次類型</span><select id="m_sess" onchange="onSess()"><option>標準場</option><option>VIP情境場</option><option>客訴情境場</option><option>外帶／訂位場</option></select></label>
+    <label class="fld"><span>場次類型</span><select id="m_sess" onchange="onSess()"><option>標準場</option><option>VIP場</option><option>客訴模擬</option><option>外帶／訂位場</option></select></label>
     <h2 style="margin-top:6px">計時</h2>
     <div class="timerbar">
       <button id="btnTea" onclick="tapTea()">🍵 茶水上桌</button>
@@ -255,7 +255,7 @@ const WT={B:25,C:20,D:15,E:15,F:15,G:10};
 const A_ans={}, S_ans={};
 
 function el(t,c,h){const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;}
-function vipOn(){return document.getElementById("m_sess").value==="VIP情境場";}
+function vipOn(){return document.getElementById("m_sess").value==="VIP場";}
 function redlines(){return VER.pro?REDLINE_PRO:REDLINE_STD;}
 function visibleIds(k){return Object.keys(DATA.items).filter(id=>id[0]===k)
   .filter(id=>!(VER.aud==="guest"&&GUEST_HIDE.has(id)))
