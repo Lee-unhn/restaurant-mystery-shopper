@@ -108,6 +108,9 @@ border-radius:9px;font-weight:700;font-size:13px;}
 .dish .dt{flex:none;font-weight:700;color:var(--navy);font-size:13px;width:96px;}
 .dish input{flex:1;padding:7px 8px;}
 .dish .dx{flex:none;color:var(--red);font-weight:800;padding:2px 8px;cursor:pointer;}
+.thelp{font-size:12px;color:var(--mute);margin:2px 0 10px;line-height:1.7;background:#fff;
+border:1px dashed var(--line);border-radius:9px;padding:8px 10px;}
+.thelp b{color:var(--navy);}
 </style>
 </head>
 <body>
@@ -140,6 +143,14 @@ border-radius:9px;font-weight:700;font-size:13px;}
     </div>
     <label class="fld"><span>場次類型</span><select id="m_sess" onchange="onSess()"><option>標準場</option><option>VIP場</option><option>客訴模擬</option><option>外帶／訂位場</option></select></label>
     <h2 style="margin-top:6px">計時</h2>
+    <div class="thelp">
+      <b>進門→迎賓</b>：踏進大門 → 第一位員工開口招呼你，數<b>秒</b>。<br>
+      <b>入座→茶水</b>：坐下 → 茶水（迎賓茶／毛巾）送上桌，以下皆數<b>分鐘</b>。<br>
+      <b>茶水→點餐</b>：茶水送上桌 → 店員收單、點餐完成（按上方鈕自動算）。<br>
+      <b>點餐→首道</b>：點餐完成 → 第一道菜上桌（按「上菜 +1」自動算）。<br>
+      <b>首道→最後道</b>：第一道上桌 → 最後一道上桌（按「上菜 +1」自動算）。<br>
+      <b>結帳</b>：起身前往櫃台結帳（<b>含排隊等待</b>）→ 結完帳拿到發票為止。
+    </div>
     <div class="timerbar">
       <button id="btnTea" onclick="tapTea()">🍵 茶水上桌</button>
       <button id="btnOrder" onclick="tapOrder()">📝 點餐完成</button>
@@ -155,8 +166,8 @@ border-radius:9px;font-weight:700;font-size:13px;}
       <label class="fld"><span>點餐→首道（分）</span><input id="t_food" type="number" inputmode="decimal" placeholder="自動帶入第一道"></label>
     </div>
     <div class="row">
+      <label class="fld"><span>首道→最後道（分）</span><input id="t_serve" type="number" inputmode="decimal" placeholder="滿兩道自動帶入"></label>
       <label class="fld"><span>結帳（分）</span><input id="t_pay" type="number" inputmode="decimal"></label>
-      <div></div>
     </div>
   </div>
 
@@ -403,14 +414,16 @@ function tapOrder(){T.order=Date.now();const b=document.getElementById("btnOrder
   if(T.tea)document.getElementById("t_order").value=((T.order-T.tea)/60000).toFixed(1);}
 function tapDish(){ if(!T.order){alert("請先按「點餐完成」開始計時");return;}
   const s=(Date.now()-T.order)/1000; T.dishes.push({t:s,name:""});
-  if(T.dishes.length===1)document.getElementById("t_food").value=(s/60).toFixed(1);
-  renderDishes();}
+  syncDishFields(); renderDishes();}
+function syncDishFields(){ // 由上菜紀錄回填：點餐→首道、首道→最後道
+  if(T.dishes.length)document.getElementById("t_food").value=(T.dishes[0].t/60).toFixed(1);
+  if(T.dishes.length>=2)document.getElementById("t_serve").value=((T.dishes[T.dishes.length-1].t-T.dishes[0].t)/60).toFixed(1);}
 function renderDishes(){const box=document.getElementById("dishList");box.innerHTML="";
   T.dishes.forEach((d,i)=>{const r=el("div","dish");
     r.innerHTML='<div class="dt">第'+(i+1)+'道 '+fmt(d.t)+'</div>';
     const inp=document.createElement("input");inp.placeholder="菜名（可稍後補）";inp.value=d.name;
     inp.oninput=()=>{d.name=inp.value;};
-    const x=el("div","dx","✕");x.onclick=()=>{if(confirm("刪除這筆上菜紀錄？")){T.dishes.splice(i,1);renderDishes();}};
+    const x=el("div","dx","✕");x.onclick=()=>{if(confirm("刪除這筆上菜紀錄？")){T.dishes.splice(i,1);syncDishFields();renderDishes();}};
     r.appendChild(inp);r.appendChild(x);box.appendChild(r);});}
 
 function summary(){
@@ -422,7 +435,7 @@ function summary(){
   L.push("店別："+g("m_store")+"　日期："+g("m_date"));
   L.push("時段："+g("m_time")+"／"+g("m_party")+"　場次："+g("m_sess"));
   L.push("服務員："+g("m_server"));
-  L.push("計時：迎賓"+g("t_greet")+"秒｜入座→茶水"+g("t_tea")+"分｜茶水→點餐"+g("t_order")+"分｜點餐→首道"+g("t_food")+"分｜結帳"+g("t_pay")+"分");
+  L.push("計時：迎賓"+g("t_greet")+"秒｜入座→茶水"+g("t_tea")+"分｜茶水→點餐"+g("t_order")+"分｜點餐→首道"+g("t_food")+"分｜首道→最後道"+g("t_serve")+"分｜結帳(含排隊)"+g("t_pay")+"分");
   if(T.dishes.length){L.push("上菜紀錄（自點餐完成起算）：");
     T.dishes.forEach((d,i)=>L.push("  第"+(i+1)+"道 "+fmt(d.t)+"　"+(d.name||"（未填菜名）")));}
   L.push("");
@@ -449,7 +462,7 @@ function payload(){
   const out={version:VER.label,aud:VER.aud,pro:VER.pro,meta:{},A:A_ans,scores:S_ans,
     dishes:T.dishes.map((d,i)=>({n:i+1,name:d.name,sec:Math.round(d.t)})),
     evidence:[...document.querySelectorAll(".ev:checked")].map(e=>e.value),summary:summary(),ts:new Date().toISOString()};
-  ["m_store","m_date","m_time","m_party","m_sess","m_server","t_greet","t_tea","t_order","t_food","t_pay","m_note"].forEach(id=>out.meta[id]=document.getElementById(id).value);
+  ["m_store","m_date","m_time","m_party","m_sess","m_server","t_greet","t_tea","t_order","t_food","t_serve","t_pay","m_note"].forEach(id=>out.meta[id]=document.getElementById(id).value);
   out.meta.m_src=VER.src; // 秘客來源由入口決定，不自報
   return out;
 }
