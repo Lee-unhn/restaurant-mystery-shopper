@@ -534,7 +534,7 @@ function submitForm(){
   const evBytes=evFlat().reduce((a,f)=>a+f.data.length,0)*0.75;
   if(evBytes>25*1024*1024){ alert("附件總量超過 25MB，請刪減照片或錄音後再送出。"); return; }
   fetch(ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload())})
-    .then(()=>alert("已送出，主管端會自動收到。可關閉本頁。"))
+    .then(()=>alert("已送出。可關閉本頁。"))
     .catch(()=>{alert("送出失敗（可能離線）。已改為下載檔，請手動交回。");exportJSON();});
 }
 function clearAll(){ if(!confirm("確定清除全部？將回到身分選擇畫面。"))return; location.reload(); }
