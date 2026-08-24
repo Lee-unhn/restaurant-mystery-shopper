@@ -114,12 +114,14 @@ border:1px dashed var(--line);border-radius:9px;padding:8px 10px;}
 .u{font-weight:800;} .u.s{color:var(--red);} .u.m{color:var(--green);}
 /* 證據上傳 */
 .upgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 8px;}
-.upbox{border:1.5px dashed var(--line);border-radius:10px;padding:10px 6px;text-align:center;
-background:#fff;cursor:pointer;font-size:13px;}
-.upbox .cnt{font-weight:800;color:var(--navy);font-size:17px;}
-.upbox.has{border-color:var(--green);border-style:solid;}
-.upbox.has .cnt{color:var(--green);}
-.upbox .clr{color:var(--red);font-size:11px;text-decoration:underline;display:none;}
+.upbox{border:1.5px solid var(--navy);border-radius:10px;padding:11px 6px;text-align:center;
+background:var(--navy);color:#fff;cursor:pointer;font-size:14px;font-weight:700;
+box-shadow:0 1px 3px rgba(0,0,0,.15);user-select:none;}
+.upbox:active{opacity:.85;}
+.upbox .cnt{font-size:11.5px;font-weight:600;color:#cdd8e8;margin-top:3px;}
+.upbox.has{background:var(--green);border-color:var(--green);}
+.upbox.has .cnt{color:#eafff4;font-weight:700;}
+.upbox .clr{color:#ffd9d4;font-size:11px;text-decoration:underline;display:none;margin-top:2px;}
 .upbox.has .clr{display:inline-block;}
 </style>
 </head>
@@ -444,7 +446,8 @@ function buildEvUI(){
       inp.value="";refreshEv();
     };
     box.appendChild(inp);
-    box.appendChild(el("div",null,'<div class="cnt" id="evc_'+kind+'">0</div><div>'+kind+(kind==="錄音"?"（客訴模擬）":"")+'</div><span class="clr">清空重選</span>'));
+    const icon={"發票":"🧾","出餐照":"📷","環境照":"🏞","錄音":"🎙"}[kind];
+    box.appendChild(el("div",null,'<div>'+icon+' 上傳'+kind+(kind==="錄音"?"（客訴模擬）":"")+'</div><div class="cnt" id="evc_'+kind+'">點我選檔或拍照</div><span class="clr">清空重選</span>'));
     box.onclick=(e)=>{ if(e.target===inp)return;
       if(e.target.classList.contains("clr")){EV_FILES[kind].length=0;refreshEv();return;}
       inp.click(); };
@@ -452,7 +455,7 @@ function buildEvUI(){
   });
 }
 function refreshEv(){EV_TYPES.forEach(([kind])=>{const n=EV_FILES[kind].length;
-  document.getElementById("evc_"+kind).textContent=n;
+  document.getElementById("evc_"+kind).textContent=n?("✓ 已選 "+n+(kind==="錄音"?" 個檔":" 張")):"點我選檔或拍照";
   document.querySelector('.upbox[data-kind="'+kind+'"]').classList.toggle("has",n>0);});}
 function evCounts(){const o={};EV_TYPES.forEach(([k])=>o[k]=EV_FILES[k].length);return o;}
 function evFlat(){const a=[];EV_TYPES.forEach(([k])=>EV_FILES[k].forEach(f=>a.push({kind:k,name:f.name,mime:f.mime,data:f.data})));return a;}
